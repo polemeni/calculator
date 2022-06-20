@@ -1,11 +1,15 @@
+/* eslint-disable default-case */
 import { useReducer } from "react";
 import DigitButton from "./DigitButton";
 import OperationButton from "./OperationButton";
+import SpecialOperationButton from "./SpecialOperationButton"; 
+import { sqrt, factorial } from 'mathjs'; 
 import "./styles.css";
 
 export const ACTIONS = {
   ADD_DIGIT: 'add-digit',
   CHOOSE_OPERATION: 'choose-operation',
+  CHOOSE_SPECIAL_OPERATION: 'choose-special-operation',
   CLEAR: 'clear',
   DELETE_DIGIT: 'delete-digit',
   EVALUATE: 'evaluate',
@@ -23,16 +27,16 @@ function reducer(state, { type, payload }) {
         }
       }
       // Edge case: Does not allow more than one decimal
-      if (payload.digit == '.' && state.currentOperand.includes(".")) {
+      if (payload.digit === '.' && state.currentOperand.includes(".")) {
         return state
       }
       // Edge case: Doesn't allow a currentOperand to begin with 0 unless starting a decimal
       // Initial state for current operand is 0
       if (state.currentOperand == null) {
-        if (payload.digit == '0' && state.previousOperand == null) {
+        if (payload.digit === '0' && state.previousOperand == null) {
           return state
         }
-        if (payload.digit == '.') {
+        if (payload.digit === '.') {
           return {
             ...state,
             currentOperand: `${state.currentOperand}${payload.digit}`,
@@ -53,7 +57,7 @@ function reducer(state, { type, payload }) {
       if (state.currentOperand == null && state.previousOperand == null) {
         return state
       }
-      //
+      // Allows the user to switch the operation after already selecting one
       if (state.currentOperand == null && state.previousOperand != null) {
         return {
           ...state,
@@ -76,6 +80,17 @@ function reducer(state, { type, payload }) {
         previousOperand: evaluate(state),
         // previousOperand: 'Trigger check',
         operation: payload.operation,
+      }
+    
+    case ACTIONS.CHOOSE_SPECIAL_OPERATION:
+      state.operation = payload.operation
+      // console.log('Current Operand', state.currentOperand)
+      return {
+        ...state,
+        currentOperand: evaluateSpecial(state),
+        previousOperand: null,
+        operation: null,
+        overwrite: true,
       }
 
     case ACTIONS.CLEAR:
@@ -109,7 +124,7 @@ function reducer(state, { type, payload }) {
       if (state.currentOperand == null) {
         return state
       }
-      if (state.currentOperand.length == 1) {
+      if (state.currentOperand.length === 1) {
         return {
           ...state,
           currentOperand: null,
@@ -127,7 +142,7 @@ function evaluate({ currentOperand, previousOperand, operation }) {
   const current = parseFloat(currentOperand)
   // console.log("Previous Operand: ", prev)
   // console.log("Current Operand: ", current)
-  if (isNaN(prev) || isNaN(current)) return ""
+  if (isNaN(current) || isNaN(prev)) return ""
 
   let computation = ""
   switch(operation) {
@@ -143,7 +158,30 @@ function evaluate({ currentOperand, previousOperand, operation }) {
       computation = prev * current
       break
     case "÷":
+      console.log('Current', current)
       computation = prev / current
+      break    
+  }
+  return computation.toString()
+}
+
+function evaluateSpecial({ currentOperand, previousOperand, operation }) {
+  const current = parseFloat(currentOperand)
+  console.log(current)
+  console.log(operation)
+  let computation = ""
+  switch(operation) {
+    case "x²":
+      console.log('Current', current)
+      computation = current * current
+      break
+    case "√":
+      console.log('Current', current)
+      computation = sqrt(current)
+      break
+    case "!":
+      console.log('Current', current)
+      computation = factorial(current)
       break
   }
   return computation.toString()
@@ -177,7 +215,10 @@ function App() {
         <div className="current-operand">{formatOperand(currentOperand)}</div>
       </div>
       <button className="span-two" onClick={() => dispatch({type: ACTIONS.CLEAR})}>AC</button>
-      <button onClick={() => dispatch({type: ACTIONS.DELETE_DIGIT})}>DEL</button>
+      <button className = "span-two" onClick={() => dispatch({type: ACTIONS.DELETE_DIGIT})}>DEL</button>
+      <SpecialOperationButton operation = 'x²' dispatch={dispatch} />
+      <SpecialOperationButton operation = '√' dispatch={dispatch} />
+      <SpecialOperationButton operation = '!' dispatch={dispatch} />
       <OperationButton operation = '÷' dispatch={dispatch} />
       <DigitButton digit = '1' dispatch={dispatch} />
       <DigitButton digit = '2' dispatch={dispatch} />
